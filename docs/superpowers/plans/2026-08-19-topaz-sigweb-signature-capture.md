@@ -28,6 +28,7 @@
 **Files:**
 - Create: `public/vendor/SigWebTablet.js` (downloaded, unmodified)
 - Create: `src/types/sigweb.d.ts`
+- Create: `.gitattributes`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -77,15 +78,25 @@ declare function GetSigImageB64(callback: (base64: string) => void): void
 declare function Reset(): void
 ```
 
-- [ ] **Step 4: Typecheck and lint**
+- [ ] **Step 4: Exclude the vendored file from GitHub language stats**
+
+Create `.gitattributes` (the repo has none yet):
+
+```
+public/vendor/* linguist-vendored
+```
+
+This keeps Linguist from counting the third-party file as project JavaScript.
+
+- [ ] **Step 5: Typecheck and lint**
 
 Run: `bun run typecheck && bun run lint`
 Expected: both pass (the `.d.ts` compiles; the vendor file is outside `src/` so oxlint/tsc ignore it).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add public/vendor/SigWebTablet.js src/types/sigweb.d.ts
+git add public/vendor/SigWebTablet.js src/types/sigweb.d.ts .gitattributes
 git commit -m "feat: vendor Topaz SigWebTablet.js with ambient type declarations"
 ```
 
