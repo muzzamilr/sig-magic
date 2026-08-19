@@ -22,6 +22,13 @@ export const DEFAULT_SIGWEB_SCRIPT_URL = '/vendor/SigWebTablet.js'
 // are localhost/http per the spec.
 const SIGWEB_SERVICE_URL = 'http://tablet.sigwebtablet.com:47289/SigWeb/'
 
+// The service intermittently answers 400 on TabletState for a short window
+// after a teardown/Reset while it re-cycles the pad connection. The vendor
+// script swallows those 400s (sync XHR, no throw), so the only reliable
+// signal that capture really started is reading TabletState back as 1.
+const OPEN_VERIFY_TIMEOUT_MS = 3000
+const OPEN_RETRY_DELAY_MS = 200
+
 let scriptPromise: Promise<boolean> | null = null
 let tabletTimer: number | null = null
 // Bumped by every startCapture claim and every stopCapture. A startCapture
@@ -77,8 +84,20 @@ export async function startCapture(
     SetDisplayXSize(canvas.width)
     SetDisplayYSize(canvas.height)
     ClearTablet()
-    tabletTimer = SetTabletState(1, ctx, 50)
-    return { ok: true, value: undefined }
+    const deadline = Date.now() + OPEN_VERIFY_TIMEOUT_MS
+    for (;;) {
+      tabletTimer = SetTabletState(1, ctx, 50)
+      if (tabletTimer !== null && Number(GetTabletState()) === 1) {
+        return { ok: true, value: undefined }
+      }
+      // Failed or unverifiable open: drop any render timer the vendor
+      // started on a bogus state read, then retry until the deadline.
+      SetTabletState(0, tabletTimer)
+      tabletTimer = null
+      if (Date.now() >= deadline) return { ok: false, reason: 'service-unreachable' }
+      await new Promise((r) => setTimeout(r, OPEN_RETRY_DELAY_MS))
+      if (claim !== lifecycleEpoch) return { ok: true, value: undefined }
+    }
   } catch {
     tabletTimer = null
     return { ok: false, reason: 'service-unreachable' }
