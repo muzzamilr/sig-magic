@@ -17,6 +17,8 @@ export function CanvasCapture({ initialStrokes, onDone, onCancel }: CanvasCaptur
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const strokesRef = useRef<Stroke[]>(initialStrokes.map((s) => [...s]))
   const liveStroke = useRef<Stroke | null>(null)
+  const onCancelRef = useRef(onCancel)
+  onCancelRef.current = onCancel
   const [hasInk, setHasInk] = useState(initialStrokes.length > 0)
 
   const redraw = () => {
@@ -41,7 +43,7 @@ export function CanvasCapture({ initialStrokes, onDone, onCancel }: CanvasCaptur
   useEffect(() => {
     redraw()
     window.addEventListener('resize', redraw)
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCancel()
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCancelRef.current()
     window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('resize', redraw)
