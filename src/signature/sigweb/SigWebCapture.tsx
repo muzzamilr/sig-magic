@@ -48,12 +48,8 @@ export function SigWebCapture({ boxWidth, boxHeight, scriptUrl, onAccept }: SigW
   }, [scriptUrl])
 
   useEffect(() => {
-    let cancelled = false
-    void begin().then(() => {
-      if (cancelled) stopCapture() // StrictMode/unmount race: start resolved after cleanup
-    })
+    void begin()
     return () => {
-      cancelled = true
       stopCapture()
     }
   }, [begin])

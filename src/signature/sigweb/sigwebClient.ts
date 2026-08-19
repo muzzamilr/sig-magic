@@ -21,6 +21,10 @@ const SIGWEB_SERVICE_URL = 'http://tablet.sigwebtablet.com:47289/SigWeb/'
 
 let scriptPromise: Promise<boolean> | null = null
 let tabletTimer: number | null = null
+// Bumped by every startCapture claim and every stopCapture. A startCapture
+// that awakes from its await to find the epoch moved on was superseded (a
+// newer start or a stop happened) and must not touch the tablet.
+let lifecycleEpoch = 0
 
 function loadSigWebScript(url: string): Promise<boolean> {
   if (scriptPromise) return scriptPromise
@@ -59,12 +63,14 @@ export async function startCapture(
   canvas: HTMLCanvasElement,
   scriptUrl: string = DEFAULT_SIGWEB_SCRIPT_URL,
 ): Promise<SigWebResult<void>> {
+  const claim = ++lifecycleEpoch
   const loaded = await loadSigWebScript(scriptUrl)
+  if (claim !== lifecycleEpoch) return { ok: true, value: undefined } // superseded; newer session owns the tablet
   if (!loaded) return { ok: false, reason: 'script-load-failed' }
   const ctx = canvas.getContext('2d')
   if (!ctx) return { ok: false, reason: 'service-unreachable' }
   try {
-    stopCapture()
+    teardownTablet()
     SetDisplayXSize(canvas.width)
     SetDisplayYSize(canvas.height)
     ClearTablet()
@@ -84,7 +90,7 @@ export function clearCapture(): void {
   }
 }
 
-export function stopCapture(): void {
+function teardownTablet(): void {
   if (tabletTimer === null) return
   try {
     SetTabletState(0, tabletTimer)
@@ -93,6 +99,11 @@ export function stopCapture(): void {
     // service already unreachable — local timer handle is all we can drop
   }
   tabletTimer = null
+}
+
+export function stopCapture(): void {
+  lifecycleEpoch++
+  teardownTablet()
 }
 
 export function isCapturing(): boolean {
