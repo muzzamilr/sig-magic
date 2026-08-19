@@ -2,6 +2,19 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
+## Toolchain: Bun only
+
+This project uses [Bun](https://bun.sh) as its only runtime and package manager:
+
+```sh
+bun install    # install dependencies (bun.lock is the only lockfile)
+bun run dev    # start the dev server
+bun run build  # typecheck + production build
+bun run lint   # oxlint
+```
+
+Do not use npm, yarn, pnpm, or node — other lockfiles are gitignored.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)

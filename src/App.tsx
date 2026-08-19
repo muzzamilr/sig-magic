@@ -11,15 +11,28 @@
 // included as a toggle so the difference is visible.
 
 import { useEffect, useRef, useState } from 'react'
+import type { PointerEvent as ReactPointerEvent, MouseEvent as ReactMouseEvent } from 'react'
 
 const BOX_W = 400
 const BOX_H = 200
 const BOX_PAD = 16 // breathing room inside the preview box
 const INK_WIDTH = 2.5 // stroke width while drawing fullscreen, CSS px
 
+type Point = { x: number; y: number }
+type Stroke = Point[]
+type ScaleMode = 'fit' | 'naive'
+type Viewport = { w: number; h: number }
+
+interface Transform {
+  sx: number
+  sy: number
+  ox: number
+  oy: number
+}
+
 // ---------- scaling core (the interesting part) ----------
 
-function getInkBBox(strokes) {
+function getInkBBox(strokes: Stroke[]) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
   for (const stroke of strokes) {
     for (const p of stroke) {
@@ -35,7 +48,14 @@ function getInkBBox(strokes) {
 // Maps viewport-space stroke points into a w×h target.
 // mode 'fit'   → uniform scale of the ink bounding box, centered (recommended)
 // mode 'naive' → non-uniform squash of the whole viewport (for comparison)
-function computeTransform(strokes, w, h, pad, mode, viewport) {
+function computeTransform(
+  strokes: Stroke[],
+  w: number,
+  h: number,
+  pad: number,
+  mode: ScaleMode,
+  viewport: Viewport,
+): Transform {
   if (mode === 'naive') {
     return { sx: w / viewport.w, sy: h / viewport.h, ox: 0, oy: 0 }
   }
@@ -50,10 +70,19 @@ function computeTransform(strokes, w, h, pad, mode, viewport) {
 }
 
 // Redraws strokes onto a canvas of CSS size w×h, backed at `dpr` resolution.
-function renderStrokes(canvas, strokes, w, h, mode, viewport, { dpr = window.devicePixelRatio || 1, background = null } = {}) {
+function renderStrokes(
+  canvas: HTMLCanvasElement,
+  strokes: Stroke[],
+  w: number,
+  h: number,
+  mode: ScaleMode,
+  viewport: Viewport,
+  { dpr = window.devicePixelRatio || 1, background = null as string | null } = {},
+) {
   canvas.width = Math.round(w * dpr)
   canvas.height = Math.round(h * dpr)
   const ctx = canvas.getContext('2d')
+  if (!ctx) return
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, w, h)
   if (background) {
@@ -71,7 +100,7 @@ function renderStrokes(canvas, strokes, w, h, mode, viewport, { dpr = window.dev
 }
 
 // Smooth polyline: quadratic curves through midpoints.
-function drawStroke(ctx, stroke, map) {
+function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, map: (p: Point) => Point) {
   const pts = stroke.map(map)
   ctx.beginPath()
   if (pts.length < 3) {
@@ -92,20 +121,28 @@ function drawStroke(ctx, stroke, map) {
 
 // ---------- fullscreen capture overlay ----------
 
-function CaptureOverlay({ initialStrokes, onDone, onCancel }) {
-  const canvasRef = useRef(null)
-  const strokesRef = useRef(initialStrokes.map((s) => [...s]))
-  const liveStroke = useRef(null)
+interface CaptureOverlayProps {
+  initialStrokes: Stroke[]
+  onDone: (strokes: Stroke[]) => void
+  onCancel: () => void
+}
+
+function CaptureOverlay({ initialStrokes, onDone, onCancel }: CaptureOverlayProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const strokesRef = useRef<Stroke[]>(initialStrokes.map((s) => [...s]))
+  const liveStroke = useRef<Stroke | null>(null)
   const [hasInk, setHasInk] = useState(initialStrokes.length > 0)
 
   const redraw = () => {
     const canvas = canvasRef.current
+    if (!canvas) return
     const dpr = window.devicePixelRatio || 1
     const w = window.innerWidth
     const h = window.innerHeight
     canvas.width = Math.round(w * dpr)
     canvas.height = Math.round(h * dpr)
     const ctx = canvas.getContext('2d')
+    if (!ctx) return
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, w, h)
     ctx.lineWidth = INK_WIDTH
@@ -118,7 +155,7 @@ function CaptureOverlay({ initialStrokes, onDone, onCancel }) {
   useEffect(() => {
     redraw()
     window.addEventListener('resize', redraw)
-    const onKey = (e) => e.key === 'Escape' && onCancel()
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCancel()
     window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('resize', redraw)
@@ -126,14 +163,14 @@ function CaptureOverlay({ initialStrokes, onDone, onCancel }) {
     }
   }, [])
 
-  const onPointerDown = (e) => {
+  const onPointerDown = (e: ReactPointerEvent<HTMLCanvasElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId)
     liveStroke.current = [{ x: e.clientX, y: e.clientY }]
     strokesRef.current.push(liveStroke.current)
     setHasInk(true)
     redraw()
   }
-  const onPointerMove = (e) => {
+  const onPointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
     if (!liveStroke.current) return
     liveStroke.current.push({ x: e.clientX, y: e.clientY })
     redraw()
@@ -171,14 +208,14 @@ function CaptureOverlay({ initialStrokes, onDone, onCancel }) {
 
 // ---------- signature modal ----------
 
-function SignatureModal({ onClose }) {
-  const previewRef = useRef(null)
-  const [strokes, setStrokes] = useState([])
+function SignatureModal({ onClose }: { onClose: () => void }) {
+  const previewRef = useRef<HTMLCanvasElement>(null)
+  const [strokes, setStrokes] = useState<Stroke[]>([])
   const [capturing, setCapturing] = useState(false)
-  const [mode, setMode] = useState('fit')
+  const [mode, setMode] = useState<ScaleMode>('fit')
   // viewport size at capture time — needed by naive mode, and so the render
   // is stable even if the window is resized afterwards
-  const viewportRef = useRef({ w: window.innerWidth, h: window.innerHeight })
+  const viewportRef = useRef<Viewport>({ w: window.innerWidth, h: window.innerHeight })
 
   useEffect(() => {
     if (previewRef.current) {
@@ -190,6 +227,7 @@ function SignatureModal({ onClose }) {
     const off = document.createElement('canvas')
     renderStrokes(off, strokes, BOX_W, BOX_H, mode, viewportRef.current, { dpr: 2, background: '#ffffff' })
     off.toBlob((blob) => {
+      if (!blob) return
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -214,7 +252,10 @@ function SignatureModal({ onClose }) {
   }
 
   return (
-    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-backdrop"
+      onClick={(e: ReactMouseEvent<HTMLDivElement>) => e.target === e.currentTarget && onClose()}
+    >
       <div className="modal">
         <h2>Sign the monthly report</h2>
         <p className="muted">
@@ -232,7 +273,7 @@ function SignatureModal({ onClose }) {
         {strokes.length > 0 && (
           <label className="mode-toggle">
             Scaling:&nbsp;
-            <select value={mode} onChange={(e) => setMode(e.target.value)}>
+            <select value={mode} onChange={(e) => setMode(e.target.value as ScaleMode)}>
               <option value="fit">Fit ink bounding box (recommended)</option>
               <option value="naive">Naive: squash whole viewport</option>
             </select>

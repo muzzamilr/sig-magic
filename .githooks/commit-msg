@@ -1,0 +1,10 @@
+#!/bin/sh
+# Repository rule: commit messages must not mention Claude or Anthropic
+# (no "Co-Authored-By: Claude", no "Generated with Claude Code", etc.).
+msg_file="$1"
+
+if grep -qiE 'claude|anthropic' "$msg_file"; then
+  echo "ERROR: commit message must not contain 'Claude' or 'Anthropic'." >&2
+  echo "Remove the attribution/trailer and commit again." >&2
+  exit 1
+fi

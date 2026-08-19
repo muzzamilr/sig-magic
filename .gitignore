@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Bun is the only package manager — bun.lock is the one committed lockfile
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
