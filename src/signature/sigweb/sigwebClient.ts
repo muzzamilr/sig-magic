@@ -17,6 +17,9 @@ export const DEFAULT_SIGWEB_SCRIPT_URL = '/vendor/SigWebTablet.js'
 
 // Topaz owns this hostname; it publicly resolves to 127.0.0.1, where the
 // SigWeb Windows service listens.
+// NOTE: http-only by design (SigWeb's https variant uses port 47290); pages
+// served over https cannot probe this URL (mixed content) — supported hosts
+// are localhost/http per the spec.
 const SIGWEB_SERVICE_URL = 'http://tablet.sigwebtablet.com:47289/SigWeb/'
 
 let scriptPromise: Promise<boolean> | null = null
@@ -49,7 +52,7 @@ export async function probeSigWeb(timeoutMs = 1500, fetchImpl: typeof fetch = fe
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    const res = await fetchImpl(`${SIGWEB_SERVICE_URL}TabletState`, { signal: controller.signal })
+    const res = await fetchImpl(`${SIGWEB_SERVICE_URL}TabletState`, { signal: controller.signal, cache: 'no-store' })
     return res.ok
   } catch {
     return false
@@ -91,7 +94,10 @@ export function clearCapture(): void {
 }
 
 function teardownTablet(): void {
-  if (tabletTimer === null) return
+  // No early-return on a null local timer: after a page reload mid-capture
+  // the SERVICE can still be in state 1 with no local handle, and the
+  // vendor's SetTabletState(1, ...) no-ops unless the state is forced back
+  // to 0 first. SetTabletState tolerates a null timer argument.
   try {
     SetTabletState(0, tabletTimer)
     Reset()

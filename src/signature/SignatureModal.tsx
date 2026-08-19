@@ -12,6 +12,7 @@ import { DEFAULT_SIGWEB_SCRIPT_URL, probeSigWeb } from './sigweb/sigwebClient'
 import type { SignatureResult, SignatureSource } from './types'
 
 export interface SignatureModalProps {
+  /** Host must UNMOUNT the modal on close (not merely hide it) — pad capture teardown runs in unmount cleanup. */
   onClose: () => void
   /** Fired whenever a capture is accepted (either method). */
   onComplete?: (result: SignatureResult) => void
