@@ -103,7 +103,7 @@ export function SignatureModal({
           <button
             role="tab"
             aria-selected={tab === 'canvas'}
-            className={tab === 'canvas' ? 'sig-tab active' : 'sig-tab'}
+            className={tab === 'canvas' ? 'sig-tab sig-active' : 'sig-tab'}
             onClick={() => pickTab('canvas')}
           >
             ✏️ Draw
@@ -111,7 +111,7 @@ export function SignatureModal({
           <button
             role="tab"
             aria-selected={tab === 'sigweb'}
-            className={tab === 'sigweb' ? 'sig-tab active' : 'sig-tab'}
+            className={tab === 'sigweb' ? 'sig-tab sig-active' : 'sig-tab'}
             disabled={padStatus !== 'available'}
             onClick={() => pickTab('sigweb')}
           >

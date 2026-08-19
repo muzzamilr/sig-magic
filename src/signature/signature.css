@@ -44,7 +44,7 @@
 
 .sig-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
 .sig-modal .sig-tab { border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent; }
-.sig-modal .sig-tab.active { border-bottom-color: #3b5bdb; font-weight: 600; }
+.sig-modal .sig-tab.sig-active { border-bottom-color: #3b5bdb; font-weight: 600; }
 
 .sig-pad-note { font-size: 13px; color: #6b7280; margin-bottom: 12px; }
 .sig-modal .sig-linklike {
