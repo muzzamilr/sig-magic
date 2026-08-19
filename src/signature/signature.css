@@ -1,0 +1,126 @@
+/* Signature module styles. All classes are sig- prefixed; the module owns
+   its button styling so it stays self-contained when lifted into another
+   codebase. */
+
+.sig-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 24, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.sig-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 26px;
+  width: 520px;
+  max-width: calc(100vw - 32px);
+  color: #1a1f36;
+}
+.sig-modal h2 { margin: 0 0 6px; font-size: 19px; }
+.sig-muted { color: #6b7280; font-size: 13px; margin: 0 0 18px; }
+
+.sig-modal button,
+.sig-capture-toolbar button {
+  font: inherit;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #d4d8e2;
+  background: #fff;
+  color: #1a1f36;
+  cursor: pointer;
+}
+.sig-modal button:hover:not(:disabled),
+.sig-capture-toolbar button:hover:not(:disabled) { background: #f2f4f9; }
+.sig-modal button:disabled,
+.sig-capture-toolbar button:disabled { opacity: 0.45; cursor: default; }
+.sig-modal button.sig-primary,
+.sig-capture-toolbar button.sig-primary { background: #3b5bdb; border-color: #3b5bdb; color: #fff; }
+.sig-modal button.sig-primary:hover:not(:disabled),
+.sig-capture-toolbar button.sig-primary:hover:not(:disabled) { background: #3450c4; }
+
+.sig-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.sig-modal .sig-tab { border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent; }
+.sig-modal .sig-tab.active { border-bottom-color: #3b5bdb; font-weight: 600; }
+
+.sig-pad-note { font-size: 13px; color: #6b7280; margin-bottom: 12px; }
+.sig-modal .sig-linklike {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #3b5bdb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.sig-panel { margin-bottom: 14px; text-align: center; }
+
+.sig-pad-panel { margin-bottom: 14px; text-align: center; }
+.sig-pad-mirror {
+  display: block;
+  margin: 0 auto 10px;
+  border: 1px solid #e3e6ee;
+  border-radius: 8px;
+  background: #fff;
+}
+.sig-pad-actions { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+.sig-hint { font-size: 13px; color: #6b7280; }
+.sig-error { font-size: 13px; color: #b42318; }
+
+.sig-box {
+  border: 2px dashed #c6cbd9;
+  border-radius: 8px;
+  background: #fafbfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 14px auto;
+  overflow: hidden;
+}
+.sig-placeholder { color: #9aa1b2; font-size: 14px; }
+
+.sig-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+/* fullscreen draw overlay */
+.sig-capture-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(59, 91, 219, 0.05);
+}
+.sig-capture-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  cursor: crosshair;
+  touch-action: none;
+}
+.sig-capture-hint {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 31, 54, 0.85);
+  color: #fff;
+  font-size: 13px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+.sig-capture-toolbar {
+  position: absolute;
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #e3e6ee;
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 8px 30px rgba(20, 24, 40, 0.18);
+}
