@@ -12,8 +12,7 @@
     "build": "bunx tsc -b && bunx --bun vite build",
     "lint": "bunx oxlint",
     "preview": "bunx --bun vite preview",
-    "typecheck": "bunx tsc -b --noEmit",
-    "prepare": "git config core.hooksPath .githooks"
+    "typecheck": "bunx tsc -b --noEmit"
   },
   "dependencies": {
     "react": "^19.2.8",
