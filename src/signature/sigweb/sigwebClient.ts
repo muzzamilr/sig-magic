@@ -16,11 +16,16 @@ export type SigWebResult<T> = { ok: true; value: T } | { ok: false; reason: SigW
 export const DEFAULT_SIGWEB_SCRIPT_URL = '/vendor/SigWebTablet.js'
 
 // Topaz owns this hostname; it publicly resolves to 127.0.0.1, where the
-// SigWeb Windows service listens.
-// NOTE: http-only by design (SigWeb's https variant uses port 47290); pages
-// served over https cannot probe this URL (mixed content) — supported hosts
-// are localhost/http per the spec.
-const SIGWEB_SERVICE_URL = 'http://tablet.sigwebtablet.com:47289/SigWeb/'
+// SigWeb Windows service listens — plain http on 47289, TLS on 47290 with a
+// real CA-issued cert for the hostname. The probe must match the page
+// protocol: an https page is barred from the http port (mixed content), and
+// the vendored SigWebTablet.js already picks the same URL by protocol.
+// On https pages Chrome additionally gates the call behind a one-time
+// "local network access" permission prompt.
+const SIGWEB_SERVICE_URL =
+  typeof location !== 'undefined' && location.protocol === 'https:'
+    ? 'https://tablet.sigwebtablet.com:47290/SigWeb/'
+    : 'http://tablet.sigwebtablet.com:47289/SigWeb/'
 
 // The service intermittently answers 400 on TabletState for a short window
 // after a teardown/Reset while it re-cycles the pad connection. The vendor
